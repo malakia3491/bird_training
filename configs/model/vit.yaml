@@ -1,0 +1,10 @@
+_target_: src.modules.models.audio_backbone.AudioBackbone
+name: vit_tiny_patch16_224.augreg_in21k_ft_in1k # Качественные веса
+checkpoint_path: "pretrained/vit_tiny.safetensors" # <--- Указываем путь к файлу
+pretrained: false
+num_classes: 0
+in_chans: 1
+
+# ВАЖНО: Для трансформеров мы просим timm сразу вернуть усредненный вектор.
+# ViT работает с патчами (кусочками картинки). 'avg' усреднит их.
+global_pool: "avg"

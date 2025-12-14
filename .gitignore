@@ -12,3 +12,4 @@ wheels/
 
 outputs/
 lightning_logs/
+pretrained/

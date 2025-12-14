@@ -1,5 +1,6 @@
-_target_: src.data_loaders.bird_datamodule.BirdDataModule # Hydra instantiation target
+_target_: src.data_loaders.bird_datamodule.BirdDataModule
 
-root_dir: "D:/coding/data/birds_common/data_russian" # Или путь, где лежит папка mel, splits, manifest
-batch_size: 64 # Для спектрограмм можно брать батч побольше, чем для аудио
+root_dir: "D:/coding/data/birds_common/data_russian"
+batch_size: 64
 num_workers: 2
+resize_shape: null  # По умолчанию выключено
