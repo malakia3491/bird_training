@@ -1,0 +1,6 @@
+name: tf_efficientnet_b2_ns
+pretrained: true
+num_classes: 10
+dropout: 0.3                 # Чуть выше, так как модель больше
+in_chans: 1
+global_pool: "avg"

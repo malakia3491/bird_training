@@ -1,0 +1,6 @@
+_target_: src.modules.models.audio_backbone.AudioBackbone # <-- Указываем, какой Python класс грузить
+name: tf_efficientnet_b0_ns
+pretrained: true
+num_classes: 0      # Важно: 0, так как голову мы добавляем отдельно
+in_chans: 1
+global_pool: ""     # Важно: пустая строка, чтобы получить фичи (B, C, F, T)

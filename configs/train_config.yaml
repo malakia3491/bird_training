@@ -1,0 +1,18 @@
+defaults:
+  - model: efficientnet
+  - frontend: identity
+  - data: precomputed
+  - head: linear         
+  - loss: cross_entropy  
+  - optimizer: adamw     
+  - scheduler: cosine    
+  - _self_
+
+project_name: "Phase1_Supervised_Fix"
+
+trainer:
+  max_epochs: 40
+  accelerator: "gpu"
+  devices: 1
+  precision: "16-mixed"
+  log_every_n_steps: 1

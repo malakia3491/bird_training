@@ -1,0 +1,9 @@
+name: logmel
+sample_rate: 32000
+n_fft: 1024
+win_length: 1024
+hop_length: 320    # При SR 32k это дает ~100 фреймов в секунду
+n_mels: 128
+f_min: 50
+f_max: 14000
+power: 2.0

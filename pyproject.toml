@@ -1,0 +1,37 @@
+[project]
+name = "bird-training"
+version = "0.1.0"
+description = "Bird Sound Detection and Classification"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch",
+    "torchvision",
+    "torchaudio",
+    "pytorch-lightning",
+    "hydra-core",
+    "timm",
+    "soundfile",
+    "numpy",
+    "pandas",
+    "scikit-learn>=1.7.2",
+    "torchmetrics>=1.8.2",
+    "matplotlib>=3.10.8",
+    "seaborn>=0.13.2",
+]
+
+# --- Самая важная часть (Index) ---
+# Мы добавляем отдельный источник для PyTorch (CUDA 12.4)
+# explicit = true означает: "Ищи тут ТОЛЬКО то, что я явно попрошу, 
+# а всякие markupsafe качай из обычного PyPI". Это решит твою ошибку.
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+# --- Привязка пакетов к источнику (Sources) ---
+# Говорим uv: "torch и компанию бери из pytorch-cu124, всё остальное - из стандарта"
+[tool.uv.sources]
+torch = [{ index = "pytorch-cu124" }]
+torchvision = [{ index = "pytorch-cu124" }]
+torchaudio = [{ index = "pytorch-cu124" }]

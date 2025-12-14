@@ -1,0 +1,5 @@
+root_dir: "D:/coding/data/birds_common/FINAL_DATASET" # ТВОЙ ПУТЬ К ДАТАСЕТУ
+batch_size: 32
+num_workers: 4
+duration: 5
+debug_limit: null

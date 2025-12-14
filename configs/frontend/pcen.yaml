@@ -1,0 +1,14 @@
+name: pcen
+sample_rate: 32000
+n_fft: 1024
+win_length: 1024
+hop_length: 320
+n_mels: 128
+f_min: 50
+f_max: 14000
+# PCEN init params
+time_constant: 0.025 # s
+eps: 1e-6
+gain: 0.98  # alpha
+bias: 2.0   # delta
+power: 0.5  # r

@@ -1,0 +1,6 @@
+name: convnext_tiny
+pretrained: true
+num_classes: 10
+dropout: 0.1
+in_chans: 1
+global_pool: "avg"

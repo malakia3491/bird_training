@@ -1,0 +1,3 @@
+_target_: src.modules.heads.LinearHead
+dropout: 0.2
+# in_features и num_classes передадутся автоматически из system.py
