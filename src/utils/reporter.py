@@ -3,11 +3,9 @@ import pytorch_lightning as pl
 from datetime import datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pandas as pd
 import numpy as np
 from omegaconf import OmegaConf
 import torch
-from sklearn.metrics import classification_report, precision_recall_fscore_support
 
 class ExperimentReporter(pl.Callback):
     def __init__(self, cfg, output_dir):
@@ -15,6 +13,7 @@ class ExperimentReporter(pl.Callback):
         self.output_dir = output_dir
         self.report_path = os.path.join(output_dir, "REPORT.md")
         
+        # Храним историю, чтобы брать финальные значения отсюда
         self.history = {
             "epoch": [],
             "train_loss": [],
@@ -28,6 +27,7 @@ class ExperimentReporter(pl.Callback):
         metrics = trainer.callback_metrics
         epoch = trainer.current_epoch
         
+        # Функция для безопасного извлечения (если метрики нет, вернет None)
         def get_val(key):
             val = metrics.get(key, None)
             return val.item() if val is not None else None
@@ -45,8 +45,15 @@ class ExperimentReporter(pl.Callback):
 
         # 1. Loss
         plt.figure(figsize=(10, 6))
-        plt.plot(epochs, self.history["train_loss"], label="Train Loss", marker='o')
-        plt.plot(epochs, self.history["val_loss"], label="Val Loss", marker='o')
+        # Фильтруем None значения (например, если val_loss еще не посчитан)
+        valid_train = [(e, v) for e, v in zip(epochs, self.history["train_loss"]) if v is not None]
+        valid_val = [(e, v) for e, v in zip(epochs, self.history["val_loss"]) if v is not None]
+        
+        if valid_train:
+            plt.plot(*zip(*valid_train), label="Train Loss", marker='o')
+        if valid_val:
+            plt.plot(*zip(*valid_val), label="Val Loss", marker='o')
+            
         plt.title("Loss Curves")
         plt.xlabel("Epoch")
         plt.ylabel("Loss")
@@ -58,9 +65,14 @@ class ExperimentReporter(pl.Callback):
         
         # 2. Metrics
         plt.figure(figsize=(10, 6))
-        plt.plot(epochs, self.history["train_acc"], label="Train Accuracy", linestyle='--')
-        plt.plot(epochs, self.history["val_acc"], label="Val Accuracy", marker='s')
-        plt.plot(epochs, self.history["val_f1"], label="Val F1 (Macro)", marker='^')
+        valid_t_acc = [(e, v) for e, v in zip(epochs, self.history["train_acc"]) if v is not None]
+        valid_v_acc = [(e, v) for e, v in zip(epochs, self.history["val_acc"]) if v is not None]
+        valid_v_f1 = [(e, v) for e, v in zip(epochs, self.history["val_f1"]) if v is not None]
+
+        if valid_t_acc: plt.plot(*zip(*valid_t_acc), label="Train Accuracy", linestyle='--')
+        if valid_v_acc: plt.plot(*zip(*valid_v_acc), label="Val Accuracy", marker='s')
+        if valid_v_f1: plt.plot(*zip(*valid_v_f1), label="Val F1 (Macro)", marker='^')
+        
         plt.title("Metrics Curves")
         plt.xlabel("Epoch")
         plt.ylabel("Score")
@@ -73,26 +85,22 @@ class ExperimentReporter(pl.Callback):
         return "loss_curve.png", "metrics_curve.png"
 
     def _plot_confusion_matrix(self, trainer, pl_module):
-        # 1. Вычисляем матрицу
-        # pl_module.val_cm хранит состояние с валидации
-        cm_tensor = pl_module.val_cm.compute()
-        cm = cm_tensor.cpu().numpy()
-        
-        # 2. Достаем имена классов
-        # Пытаемся добраться до LabelEncoder через DataModule
+        try:
+            # Тут мы вынуждены считать, так как матрицу не сохраняем в историю
+            cm_tensor = pl_module.val_cm.compute()
+            cm = cm_tensor.cpu().numpy()
+        except Exception:
+            return None
+
         class_names = None
         if hasattr(trainer.datamodule, 'label_encoder'):
             class_names = trainer.datamodule.label_encoder.classes_
         
-        # Если классов слишком много, имена не влезут
         if class_names is not None and len(class_names) > 50:
-            print("Слишком много классов для подписей, используем индексы")
             class_names = None
 
-        # 3. Рисуем
         plt.figure(figsize=(12, 10))
-        # Нормализуем по строкам (True Label), чтобы видеть проценты
-        # Добавляем epsilon чтобы не делить на 0
+        # Нормализация
         cm_normalized = cm.astype('float') / (cm.sum(axis=1)[:, np.newaxis] + 1e-9)
         
         sns.heatmap(
@@ -116,40 +124,35 @@ class ExperimentReporter(pl.Callback):
         return "confusion_matrix.png"
 
     def on_train_end(self, trainer, pl_module):
-        # 1. Генерируем графики
         loss_img, metrics_img = self._plot_curves()
-        
-        # 2. Считаем Confusion Matrix и Метрики через sklearn (самый надежный способ)
+        cm_img = self._plot_confusion_matrix(trainer, pl_module)
+
+        # 1. Берем основные метрики ИЗ ИСТОРИИ (это надежнее, чем compute() в конце)
+        def get_last(key):
+            lst = self.history.get(key, [])
+            # Берем последнее не-None значение
+            valid = [x for x in lst if x is not None]
+            return valid[-1] if valid else 0.0
+
+        final_val_loss = get_last("val_loss")
+        final_acc = get_last("val_acc")
+        final_f1 = get_last("val_f1")
+
+        # 2. Precision и Recall мы не хранили в истории (в system.py не было self.log для них),
+        # поэтому пробуем вычислить сейчас. Если модуль сброшен - будет 0.
         try:
-            # Получаем все предсказания с валидации
-            cm_tensor = pl_module.val_cm.compute()
-            # Нам нужны не сама матрица, а предсказания. 
-            # Но torchmetrics хранит их внутри val_cm, но не отдает напрямую списком.
-            # Поэтому проще посчитать метрики на основе накопленной матрицы (TP, FP, FN...)
-            # НО! Scikit-learn требует списки y_true, y_pred.
-            
-            # --- ВАРИАНТ B: Берем метрики, которые уже посчитал pl_module ---
-            # pl_module.val_f1 и др. уже посчитаны в конце эпохи
-            final_acc = pl_module.val_acc.compute().item()
-            final_f1 = pl_module.val_f1.compute().item()
             final_prec = pl_module.val_precision.compute().item()
             final_rec = pl_module.val_recall.compute().item()
-            
-            # Строим матрицу
-            cm_img = self._plot_confusion_matrix(trainer, pl_module)
-            
-        except Exception as e:
-            print(f"Ошибка расчета метрик: {e}")
-            final_acc, final_f1, final_prec, final_rec = 0, 0, 0, 0
-            cm_img = None
+        except:
+            final_prec = 0.0
+            final_rec = 0.0
 
-        final_val_loss = self.history["val_loss"][-1] if self.history["val_loss"] else "N/A"
-        
-        # Формируем конфиг
+        # Форматирование
+        def fmt(val): return f"{val:.4f}" if isinstance(val, (int, float)) else str(val)
+
         config_yaml = OmegaConf.to_yaml(self.cfg)
         frontend_name = self.cfg.frontend.get('name', 'unknown')
 
-        # MD Отчет
         md_content = f"""# 📊 Отчет эксперимента: {self.cfg.project_name}
 
 **ID:** `{os.path.basename(self.output_dir)}`  
@@ -161,11 +164,11 @@ class ExperimentReporter(pl.Callback):
 
 | Метрика | Значение (Final) |
 | :--- | :--- |
-| **Validation Loss** | **{final_val_loss:.4f}** |
-| **Validation F1 (Macro)** | **{final_f1:.4f}** |
-| **Validation Accuracy** | {final_acc:.4f} |
-| **Precision (Macro)** | {final_prec:.4f} |
-| **Recall (Macro)** | {final_rec:.4f} |
+| **Validation Loss** | **{fmt(final_val_loss)}** |
+| **Validation F1 (Macro)** | **{fmt(final_f1)}** |
+| **Validation Accuracy** | {fmt(final_acc)} |
+| **Precision (Macro)** | {fmt(final_prec)} |
+| **Recall (Macro)** | {fmt(final_rec)} |
 
 ## 2. Визуализация
 
@@ -178,11 +181,12 @@ class ExperimentReporter(pl.Callback):
 | ![Loss Curve]({loss_img}) | ![Metrics Curve]({metrics_img}) |
 
 ## 3. Конфигурация
-<details><summary>Развернуть</summary>
+<details>
+<summary>Развернуть</summary>
 
 ```yaml
 {config_yaml}
-/details>
+</details>
 """
         with open(self.report_path, "w", encoding="utf-8") as f:
             f.write(md_content)
