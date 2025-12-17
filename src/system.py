@@ -14,6 +14,12 @@ class BirdClassifier(pl.LightningModule):
         self.frontend = hydra.utils.instantiate(cfg.frontend)
         self.backbone = hydra.utils.instantiate(cfg.model)
         
+        if cfg.model.get("freeze_backbone", False):
+            print("❄️ FREEZING BACKBONE (Linear Probing Mode)")
+            for param in self.backbone.parameters():
+                param.requires_grad = False
+            self.backbone.eval() 
+        
         # Определяем размерность эмбеддинга (если бэкбон уже инициализирован)
         # Если нет - hydra сама создаст объект
         embed_dim = self.backbone.embed_dim if hasattr(self.backbone, 'embed_dim') else 1280
@@ -43,6 +49,10 @@ class BirdClassifier(pl.LightningModule):
         features = self.backbone(spec)
         logits = self.head(features)
         return logits
+
+    def on_train_start(self):
+        if self.cfg.model.get("freeze_backbone", False):
+            self.backbone.eval()
 
     def training_step(self, batch, batch_idx):
         inputs, targets = batch

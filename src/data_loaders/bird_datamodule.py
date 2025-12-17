@@ -10,15 +10,14 @@ from src.data_loaders.bird_dataset import PrecomputedBirdDataset
 from src.utils.serialization import load_pickle, save_pickle
 
 class BirdDataModule(pl.LightningDataModule):
-    def __init__(self, root_dir, batch_size, num_workers, resize_shape=None): 
+    def __init__(self, root_dir, batch_size, num_workers, resize_shape=None, train_transform=None): 
         super().__init__()
         self.root_dir = root_dir
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.resize_shape = resize_shape # (224, 224) или None
         self.label_encoder = None
-
-
+        self.train_transform = train_transform # Сохраняем
 
     def setup(self, stage=None):
         # Hydra иногда оставляет пути относительными, фиксим это
@@ -84,7 +83,8 @@ class BirdDataModule(pl.LightningDataModule):
             self.train_df, 
             self.label_encoder, 
             data_root=abs_root,
-            resize_shape=self.resize_shape
+            resize_shape=self.resize_shape,
+            augmentation=self.train_transform 
         )
         self.val_ds = PrecomputedBirdDataset(
             self.val_df, 

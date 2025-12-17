@@ -1,0 +1,3 @@
+_target_: torch.optim.AdamW
+lr: 1e-4 # Для PANNs норм
+weight_decay: 1e-4

@@ -1,0 +1,7 @@
+# Этот файл содержит настройки трейнера специально для SSL
+max_epochs: 100
+accelerator: "gpu"
+devices: 1
+precision: "16-mixed"
+log_every_n_steps: 10
+accumulate_grad_batches: 8

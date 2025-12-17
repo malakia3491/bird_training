@@ -1,0 +1,5 @@
+_target_: src.modules.models.PANNsBackbone
+name: PANNs_Cnn14 
+pretrained: true
+in_chans: 1
+num_classes: 0

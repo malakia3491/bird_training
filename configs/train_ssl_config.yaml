@@ -1,0 +1,16 @@
+defaults:
+  - model: efficientnet
+  - frontend: identity
+  - head: projection
+  - loss: ntxent
+  - data: ssl_data
+  - optimizer: adamw_ssl
+  - scheduler: cosine
+  - trainer: ssl_trainer
+  - _self_
+
+project_name: "Phase2_SimCLR_PANNs"
+
+# Явное указание эпох для планировщика, чтобы избежать ошибок интерполяции
+scheduler:
+  T_max: 100
