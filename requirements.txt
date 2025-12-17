@@ -1,0 +1,16 @@
+# PyTorch (CUDA 12.4) - ставить отдельно:
+# pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+
+pytorch-lightning
+hydra-core
+timm
+soundfile
+numpy
+pandas
+scikit-learn>=1.7.2
+torchmetrics>=1.8.2
+matplotlib>=3.10.8
+seaborn>=0.13.2
+safetensors>=0.7.0
+torchlibrosa>=0.1.0
+tqdm

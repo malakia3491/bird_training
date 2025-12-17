@@ -1,0 +1,7 @@
+# Средние контрастивные аугментации для SimCLR
+# Баланс между сложностью и стабильностью обучения
+_target_: src.data_loaders.ssl_transforms.ContrastiveTransform
+
+input_size: [128, 313]
+strength: "medium"
+noise_dir: null

@@ -1,0 +1,8 @@
+# Denoising аугментации для Reconstruction SSL
+# Модель учится убирать шум из спектрограммы
+_target_: src.data_loaders.ssl_transforms.ReconstructionTransform
+
+input_size: [128, 313]
+mask_ratio: 0.5
+corruption_type: "both"  # И маскирование, и шум
+noise_dir: null  # Путь к папке с реальными шумами

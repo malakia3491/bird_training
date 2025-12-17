@@ -1,0 +1,8 @@
+# MAE-стиль аугментации для Reconstruction SSL
+# Модель учится восстанавливать замаскированные патчи
+_target_: src.data_loaders.ssl_transforms.ReconstructionTransform
+
+input_size: [128, 313]
+mask_ratio: 0.75  # 75% патчей маскируется (как в оригинальном MAE)
+corruption_type: "mask"  # Только маскирование
+noise_dir: null
