@@ -6,10 +6,13 @@ dist/
 wheels/
 *.egg-info
 
-
 # Virtual environments
 .venv
 
+# Training outputs
 outputs/
 lightning_logs/
 pretrained/
+
+# Local data (generate with scripts/)
+data/

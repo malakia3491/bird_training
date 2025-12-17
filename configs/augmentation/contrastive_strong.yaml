@@ -1,0 +1,7 @@
+# Сильные контрастивные аугментации для SimCLR
+# Для шумов: python scripts/prepare_noise_bank.py --output data/noise_bank --synthetic
+_target_: src.data_loaders.ssl_transforms.ContrastiveTransform
+
+input_size: [128, 313]
+strength: "strong"
+noise_dir: null  # или "data/noise_bank" после генерации

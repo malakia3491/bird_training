@@ -7,11 +7,11 @@ from hydra.utils import instantiate
 import os
 
 from src.system_ssl import SSLSystem
-from src.data_loaders.ssl_transforms import ContrastiveTransform
+from src.data_loaders.ssl_transforms import ContrastiveTransform, create_ssl_transform
 from src.data_loaders.bird_datamodule import BirdDataModule
 from src.utils.ssl_reporter import SSLExperimentReporter
 
-# ИЗМЕНЕНИЕ ЗДЕСЬ: ссылаемся на новый файл в корне configs
+
 @hydra.main(config_path="configs", config_name="train_ssl_config", version_base="1.3")
 def main(cfg: DictConfig):
     pl.seed_everything(42)
@@ -20,8 +20,18 @@ def main(cfg: DictConfig):
     # 1. Resolve конфига (превращаем переменные в числа)
     OmegaConf.resolve(cfg)
 
-    # 2. Аугментации
-    ssl_transform = ContrastiveTransform(input_size=(128, 313))
+    # 2. Аугментации (через Hydra или фабрику)
+    if "augmentation" in cfg:
+        ssl_transform = instantiate(cfg.augmentation)
+        print(f"[SSL] Используем аугментации из конфига: {cfg.augmentation._target_}")
+    else:
+        # Fallback: сильные аугментации по умолчанию
+        ssl_transform = create_ssl_transform(
+            mode='contrastive',
+            strength='strong',
+            input_size=(128, 313)
+        )
+        print("[SSL] Используем дефолтные сильные аугментации")
 
     # 3. Данные
     dm = BirdDataModule(
