@@ -1,3 +1,20 @@
-root_dir: "D:/coding/data/birds_common/processed_ssl_dataset"
+# SSL Data config для on-the-fly конвертации
+# Можно использовать ОДИН из трёх вариантов:
+# 1. root_dir - директория с аудио файлами (рекурсивный поиск)
+# 2. manifest_txt - текстовый файл со списком путей (один путь на строку)
+# 3. manifest_csv - CSV файл с колонкой audio_path
+
+# Вариант 1: директория с аудио
+root_dir: "D:/Downloads/pipeline_russian-20251214T110835Z-1-001/pipeline_russian/birdclef/train_short_audio"
+
+# Вариант 2: манифест (закомментировать root_dir и раскомментировать manifest_txt)
+# manifest_txt: "D:/GIT/bird_training/birdclef_manifest.txt"
+
+# Вариант 3: CSV манифест
+# manifest_csv: null
+# audio_column: "audio_path"
+
 batch_size: 32
 num_workers: 4
+max_duration: 10.0  # Максимальная длительность сегмента в секундах
+val_split: 0.1  # 10% на валидацию

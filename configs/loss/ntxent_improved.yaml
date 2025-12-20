@@ -1,0 +1,4 @@
+# Улучшенный NT-Xent Loss
+# Temperature 0.5 работает лучше чем 0.1 для большинства задач
+_target_: src.modules.losses.NTXentLoss
+temperature: 0.5

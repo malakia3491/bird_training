@@ -1,0 +1,33 @@
+defaults:
+  - model: efficientnet
+  - frontend: identity
+  - head: projection
+  - data: ssl_data
+  - optimizer: adamw_ssl
+  - scheduler: cosine
+  - trainer: ssl_trainer
+  - augmentation: contrastive_strong
+  - _self_
+
+project_name: "SimSiam_Birds"
+
+# SimSiam projection head
+head:
+  hidden_dim: 2048
+  out_dim: 2048  # SimSiam использует больший out_dim
+
+# Predictor настройки
+predictor:
+  hidden_dim: 512
+
+# SimSiam работает лучше с SGD
+use_sgd: false  # Можно переключить на true
+
+optimizer:
+  lr: 0.0003  # Меньше LR для AdamW
+
+scheduler:
+  T_max: 100  # SimSiam требует больше эпох
+
+trainer:
+  max_epochs: 100

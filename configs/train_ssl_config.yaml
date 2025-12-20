@@ -14,7 +14,7 @@ project_name: "Phase2_SimCLR_PANNs"
 
 # Явное указание эпох для планировщика, чтобы избежать ошибок интерполяции
 scheduler:
-  T_max: 100
+  T_max: 50
 
 # Можно переопределить путь к шумам через CLI:
 # uv run train_ssl.py augmentation.noise_dir="/path/to/noise_bank"

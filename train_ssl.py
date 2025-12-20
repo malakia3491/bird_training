@@ -8,7 +8,7 @@ import os
 
 from src.system_ssl import SSLSystem
 from src.data_loaders.ssl_transforms import ContrastiveTransform, create_ssl_transform
-from src.data_loaders.bird_datamodule import BirdDataModule
+from src.data_loaders.ssl_datamodule import SSLDataModule
 from src.utils.ssl_reporter import SSLExperimentReporter
 
 
@@ -33,14 +33,19 @@ def main(cfg: DictConfig):
         )
         print("[SSL] Используем дефолтные сильные аугментации")
 
-    # 3. Данные
-    dm = BirdDataModule(
-        root_dir=cfg.data.root_dir,
+    # 3. Данные - используем SSLDataModule для on-the-fly конвертации
+    dm = SSLDataModule(
+        root_dir=cfg.data.get('root_dir'),
+        manifest_txt=cfg.data.get('manifest_txt'),
+        manifest_csv=cfg.data.get('manifest_csv'),
         batch_size=cfg.data.batch_size,
         num_workers=cfg.data.num_workers,
-        train_transform=ssl_transform
+        train_transform=ssl_transform,
+        val_transform=ssl_transform,
+        max_duration=cfg.data.get('max_duration', 10.0),
+        val_split=cfg.data.get('val_split', 0.1),
     )
-    
+
     dm.setup()
     
     # 4. Модель

@@ -1,0 +1,37 @@
+defaults:
+  - model: efficientnet
+  - frontend: identity
+  - head: projection
+  - data: ssl_data
+  - optimizer: adamw_ssl
+  - scheduler: cosine
+  - trainer: ssl_trainer
+  - augmentation: contrastive_strong
+  - _self_
+
+project_name: "BYOL_Birds"
+
+# EMA параметр (tau)
+# tau близко к 1 = медленное обновление target
+tau: 0.996
+
+# BYOL projection head
+head:
+  hidden_dim: 4096
+  out_dim: 256
+
+# Predictor
+predictor:
+  hidden_dim: 4096
+
+optimizer:
+  lr: 0.0003
+
+scheduler:
+  T_max: 100
+
+trainer:
+  max_epochs: 100
+  # BYOL требует больше памяти из-за двух копий модели
+  # Уменьшаем batch если не хватает
+  accumulate_grad_batches: 8

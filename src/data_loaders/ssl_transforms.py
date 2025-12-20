@@ -409,8 +409,104 @@ class CutmixTransform:
         return mixed, lam
 
 
+class MultiCropTransform:
+    """
+    Multi-Crop аугментация для SimCLR/DINO.
+
+    Создаёт несколько кропов разного размера:
+    - n_global_crops больших кропов (например, 224x224)
+    - n_local_crops маленьких кропов (например, 96x96)
+
+    Это даёт больше positive pairs без увеличения batch size.
+    """
+
+    def __init__(
+        self,
+        global_size: Tuple[int, int] = (128, 313),
+        local_size: Tuple[int, int] = (64, 128),
+        n_global_crops: int = 2,
+        n_local_crops: int = 4,
+        global_scale: Tuple[float, float] = (0.5, 1.0),
+        local_scale: Tuple[float, float] = (0.2, 0.5),
+        strength: Literal['weak', 'medium', 'strong'] = 'strong',
+        noise_dir: Optional[str] = None
+    ):
+        self.n_global_crops = n_global_crops
+        self.n_local_crops = n_local_crops
+
+        # Базовые аугментации
+        params = self._get_params(strength)
+        self.noise_bank = NoiseBank(noise_dir)
+        self.gaussian_std = params['gaussian_std']
+
+        # Global crops
+        self.global_crop = T.RandomResizedCrop(
+            size=global_size,
+            scale=global_scale,
+            ratio=(0.8, 1.2),
+            antialias=True
+        )
+
+        # Local crops
+        self.local_crop = T.RandomResizedCrop(
+            size=local_size,
+            scale=local_scale,
+            ratio=(0.8, 1.2),
+            antialias=True
+        )
+
+        # Общие аугментации
+        self.freq_masking = AT.FrequencyMasking(freq_mask_param=params['freq_mask_param'])
+        self.time_masking = AT.TimeMasking(time_mask_param=params['time_mask_param'])
+        self.gaussian_blur = T.GaussianBlur(kernel_size=3, sigma=(0.1, 2.0))
+
+    def _get_params(self, strength: str) -> dict:
+        if strength == 'weak':
+            return {'freq_mask_param': 15, 'time_mask_param': 30, 'gaussian_std': 0.02}
+        elif strength == 'medium':
+            return {'freq_mask_param': 25, 'time_mask_param': 50, 'gaussian_std': 0.05}
+        else:
+            return {'freq_mask_param': 40, 'time_mask_param': 80, 'gaussian_std': 0.08}
+
+    def _apply_augmentation(self, x: torch.Tensor, is_local: bool = False) -> torch.Tensor:
+        # Crop
+        if is_local:
+            x = self.local_crop(x)
+        else:
+            x = self.global_crop(x)
+
+        # Random augmentations
+        if random.random() < 0.5:
+            x = self.gaussian_blur(x)
+
+        if random.random() < 0.8:
+            x = self.freq_masking(x)
+            x = self.time_masking(x)
+
+        # Noise
+        x = add_gaussian_noise(x, self.gaussian_std * random.uniform(0.5, 1.5))
+
+        return x
+
+    def __call__(self, x: torch.Tensor) -> List[torch.Tensor]:
+        if x.ndim == 2:
+            x = x.unsqueeze(0)
+
+        crops = []
+
+        # Global crops
+        for _ in range(self.n_global_crops):
+            crops.append(self._apply_augmentation(x.clone(), is_local=False))
+
+        # Local crops
+        for _ in range(self.n_local_crops):
+            crops.append(self._apply_augmentation(x.clone(), is_local=True))
+
+        return crops
+
+
 def create_ssl_transform(
-    mode: Literal['contrastive', 'reconstruction'] = 'contrastive',
+    mode: Literal['contrastive', 'reconstruction', 'multicrop'] = 'contrastive',
     input_size: Tuple[int, int] = (128, 313),
     strength: Literal['weak', 'medium', 'strong'] = 'strong',
     noise_dir: Optional[str] = None,
@@ -429,5 +525,12 @@ def create_ssl_transform(
             noise_dir=noise_dir,
             **kwargs
         )
+    elif mode == 'multicrop':
+        return MultiCropTransform(
+            global_size=input_size,
+            strength=strength,
+            noise_dir=noise_dir,
+            **kwargs
+        )
     else:
-        raise ValueError(f"Unknown mode: {mode}. Use 'contrastive' or 'reconstruction'")
+        raise ValueError(f"Unknown mode: {mode}. Use 'contrastive', 'reconstruction', or 'multicrop'")

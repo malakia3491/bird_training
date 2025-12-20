@@ -1,0 +1,35 @@
+# Улучшенный SimCLR конфиг
+#
+# Основные изменения:
+# 1. Больший batch size (1024 эффективный)
+# 2. Temperature 0.5 вместо 0.1
+# 3. Больше эпох
+
+defaults:
+  - model: efficientnet
+  - frontend: identity
+  - head: projection
+  - loss: ntxent_improved  # temperature: 0.5
+  - data: ssl_data
+  - optimizer: adamw_ssl
+  - scheduler: cosine
+  - trainer: ssl_trainer
+  - augmentation: contrastive_strong
+  - _self_
+
+project_name: "SimCLR_Improved"
+
+# Больший эффективный batch size
+data:
+  batch_size: 64
+
+trainer:
+  max_epochs: 100
+  accumulate_grad_batches: 16  # Эффективный batch = 64 * 16 = 1024
+
+scheduler:
+  T_max: 100
+
+# Немного меньше LR для большего batch
+optimizer:
+  lr: 0.0005

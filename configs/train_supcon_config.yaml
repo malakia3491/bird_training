@@ -1,0 +1,24 @@
+defaults:
+  - model: efficientnet
+  - frontend: identity
+  - head: projection
+  - loss: supcon
+  - data: ssl_data
+  - optimizer: adamw_ssl
+  - scheduler: cosine
+  - trainer: ssl_trainer
+  - augmentation: contrastive_strong
+  - _self_
+
+project_name: "SupCon_Birds"
+
+# Для SupCon желательно больший batch size
+# чтобы в батче было несколько записей каждого класса
+data:
+  batch_size: 64  # Увеличен с 32
+
+trainer:
+  accumulate_grad_batches: 4  # Эффективный batch = 64 * 4 = 256
+
+scheduler:
+  T_max: 50
