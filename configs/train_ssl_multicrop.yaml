@@ -1,0 +1,35 @@
+# SimCLR с Multi-Crop аугментациями
+#
+# Multi-Crop создает больше positive pairs:
+# - 2 больших view (стандартный SimCLR)
+# - 4 маленьких crop (дополнительные positives)
+#
+# Это увеличивает эффективное количество positive pairs
+# и улучшает качество представлений
+
+defaults:
+  - model: efficientnet
+  - frontend: identity
+  - head: projection
+  - loss: ntxent_improved  # temperature: 0.5
+  - data: ssl_data
+  - optimizer: adamw_ssl
+  - scheduler: cosine
+  - trainer: ssl_trainer
+  - augmentation: multicrop  # Multi-crop аугментации
+  - _self_
+
+project_name: "SimCLR_MultiCrop"
+
+data:
+  batch_size: 32  # Меньше из-за большего количества views
+
+trainer:
+  max_epochs: 100
+  accumulate_grad_batches: 8  # Эффективный batch = 32 * 8 = 256
+
+scheduler:
+  T_max: 100
+
+optimizer:
+  lr: 0.0003

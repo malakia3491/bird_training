@@ -1,0 +1,19 @@
+# Multi-Crop аугментации для улучшенного SimCLR
+# Создает несколько views разного размера для лучшего обучения
+_target_: src.data_loaders.ssl_transforms.MultiCropTransform
+
+# Размеры crops
+global_size: [128, 313]  # Полный размер
+local_size: [64, 128]    # Маленькие crops
+
+# Количество crops
+n_global_crops: 2  # Большие views (основной SimCLR)
+n_local_crops: 4   # Маленькие views (дополнительные positives)
+
+# Scale для random crop
+global_scale: [0.5, 1.0]  # От 50% до 100% для больших
+local_scale: [0.2, 0.5]   # От 20% до 50% для маленьких
+
+# Сила аугментаций
+strength: "strong"
+noise_dir: null

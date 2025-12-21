@@ -414,10 +414,10 @@ class MultiCropTransform:
     Multi-Crop аугментация для SimCLR/DINO.
 
     Создаёт несколько кропов разного размера:
-    - n_global_crops больших кропов (например, 224x224)
-    - n_local_crops маленьких кропов (например, 96x96)
+    - n_global_crops больших кропов (полный размер)
+    - n_local_crops маленьких кропов (ресайзятся к global_size)
 
-    Это даёт больше positive pairs без увеличения batch size.
+    Все crops приводятся к одному размеру для совместимости с backbone.
     """
 
     def __init__(
@@ -433,13 +433,14 @@ class MultiCropTransform:
     ):
         self.n_global_crops = n_global_crops
         self.n_local_crops = n_local_crops
+        self.global_size = global_size
 
         # Базовые аугментации
         params = self._get_params(strength)
         self.noise_bank = NoiseBank(noise_dir)
         self.gaussian_std = params['gaussian_std']
 
-        # Global crops
+        # Global crops - сразу к нужному размеру
         self.global_crop = T.RandomResizedCrop(
             size=global_size,
             scale=global_scale,
@@ -447,13 +448,15 @@ class MultiCropTransform:
             antialias=True
         )
 
-        # Local crops
+        # Local crops - сначала маленький crop, потом resize к global_size
         self.local_crop = T.RandomResizedCrop(
             size=local_size,
             scale=local_scale,
             ratio=(0.8, 1.2),
             antialias=True
         )
+        # Resize local crops к global size для backbone
+        self.local_resize = T.Resize(global_size, antialias=True)
 
         # Общие аугментации
         self.freq_masking = AT.FrequencyMasking(freq_mask_param=params['freq_mask_param'])
@@ -472,6 +475,7 @@ class MultiCropTransform:
         # Crop
         if is_local:
             x = self.local_crop(x)
+            x = self.local_resize(x)  # Resize к global_size
         else:
             x = self.global_crop(x)
 
