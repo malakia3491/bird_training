@@ -191,3 +191,33 @@ class ExperimentReporter(pl.Callback):
         with open(self.report_path, "w", encoding="utf-8") as f:
             f.write(md_content)
             print(f"\n📝 Report saved to: {self.report_path}")
+            
+    def on_test_end(self, trainer, pl_module):
+        """Вызывается после trainer.test()"""
+        metrics = trainer.callback_metrics
+        
+        # Извлекаем метрики (они уже усреднены за всю эпоху теста)
+        test_loss = metrics.get("test_loss", 0.0).item()
+        test_acc = metrics.get("test_acc", 0.0).item()
+        test_f1 = metrics.get("test_f1", 0.0).item()
+        test_prec = metrics.get("test_precision", 0.0).item()
+        test_rec = metrics.get("test_recall", 0.0).item()
+        
+        def fmt(val): return f"{val:.4f}"
+
+        # Дописываем в существующий отчет
+        if os.path.exists(self.report_path):
+            with open(self.report_path, "a", encoding="utf-8") as f:
+                f.write("\n\n## 4. Результаты на TEST выборке\n")
+                f.write("*(Независимый датасет, который модель не видела)*\n\n")
+                f.write("| Метрика | Значение |\n")
+                f.write("| :--- | :--- |\n")
+                f.write(f"| **Test Loss** | **{fmt(test_loss)}** |\n")
+                f.write(f"| **Test F1 (Macro)** | **{fmt(test_f1)}** |\n")
+                f.write(f"| **Test Accuracy** | {fmt(test_acc)} |\n")
+                f.write(f"| **Test Precision** | {fmt(test_prec)} |\n")
+                f.write(f"| **Test Recall** | {fmt(test_rec)} |\n")
+                
+            print(f"\n📝 Test results appended to: {self.report_path}")
+        else:
+            print("⚠️ Report file not found, cannot append test results.")

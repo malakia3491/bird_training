@@ -1,0 +1,24 @@
+defaults:
+  - model: panns # Используем PANNs (лучше загрузить веса от SSL/DAE)
+  - frontend: identity
+  - head: embedding      # Наша голова на 128 dim
+  - loss: triplet        # Batch Hard Loss
+  - data: triplet        # Данные с сэмплером
+  - optimizer: adamw_finetune # Низкий LR (1e-4 или 1e-5)
+  - scheduler: cosine
+  - trainer: ssl_trainer # Можно переименовать в metric_trainer
+  - _self_
+
+project_name: "Phase3_Metric_Triplet"
+
+# Если хочешь загрузить предобученные веса от DAE/SimCLR:
+model:
+  pretrained: true
+  # Укажи путь к .pth файлу, который мы конвертировали скриптом convert_ssl_ckpt.py
+  checkpoint_path: "pretrained/dae_panns.pth" 
+
+trainer:
+  max_epochs: 50
+  accelerator: "gpu"
+  devices: 1
+  precision: "16-mixed"

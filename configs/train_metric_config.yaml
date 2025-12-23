@@ -1,0 +1,19 @@
+defaults:
+  - model: efficientnet_ssl          # Или efficientnet_ssl
+  - frontend: identity
+  - head: arcface         # <--- ВАЖНО: Используем ArcFace
+  - loss: cross_entropy   # ArcFace возвращает логиты, лосс обычный CE
+  - optimizer: adamw_finetune # Низкий LR (1e-4)
+  - scheduler: cosine
+  - data: precomputed     # Обычный датасет с метками
+  - trainer: ssl_trainer  # Можно использовать тот же трейнер или создать metric_trainer
+  - _self_
+
+project_name: "Phase3_Metric_ArcFace"
+
+# Настройки трейнера (если не используешь внешний файл)
+trainer:
+  max_epochs: 40
+  accelerator: "gpu"
+  devices: 1
+  precision: "16-mixed"

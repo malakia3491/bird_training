@@ -1,3 +1,4 @@
-root_dir: "D:/coding/data/birds_common/processed_ssl_dataset"
+root_dir: "D:/coding/data/birds_common/dataset_full"
 batch_size: 32
 num_workers: 4
+

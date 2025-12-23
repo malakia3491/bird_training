@@ -1,2 +1,2 @@
 _target_: src.modules.losses.NTXentLoss
-temperature: 0.1 # Для аудио часто берут поменьше
+temperature: 0.5 

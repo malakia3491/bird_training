@@ -14,7 +14,7 @@ import torchaudio.transforms as AT
 import numpy as np
 import os
 import random
-from typing import List, Tuple, Optional, Literal
+from typing import List, Tuple, Optional, Literal, Union
 from pathlib import Path
 
 
@@ -431,3 +431,34 @@ def create_ssl_transform(
         )
     else:
         raise ValueError(f"Unknown mode: {mode}. Use 'contrastive' or 'reconstruction'")
+
+class SSLEvalTransform:
+    """
+    Трансформация для валидации/теста.
+    Просто ресайзит вход до target_shape.
+    
+    mode: 'pair' (для SimCLR val loss) или 'single' (для линейной оценки/реконструкции)
+    """
+    def __init__(
+        self,
+        input_size: Tuple[int, int] = (128, 313),
+        mode: Literal['pair', 'single'] = 'pair'
+    ):
+        self.input_size = input_size
+        self.mode = mode
+        # Используем Resize для приведения к точному размеру
+        self.resize = T.Resize(input_size, antialias=True)
+
+    def __call__(self, x: torch.Tensor) -> Union[torch.Tensor, List[torch.Tensor]]:
+        if x.ndim == 2:
+            x = x.unsqueeze(0)
+
+        # Приводим к единому размеру
+        x_resized = self.resize(x)
+
+        if self.mode == 'pair':
+            # Возвращаем два одинаковых взгляда (или можно сделать x, x)
+            # Это нужно, если loss function ожидает список [x1, x2]
+            return [x_resized, x_resized]
+        
+        return x_resized

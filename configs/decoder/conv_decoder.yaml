@@ -1,0 +1,2 @@
+_target_: src.modules.decoders.ConvolutionalDecoder
+output_size: [128, 313] # Должно совпадать с input_size данных

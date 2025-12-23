@@ -86,6 +86,32 @@ class BirdClassifier(pl.LightningModule):
         self.log("val_acc", self.val_acc, on_epoch=True, prog_bar=True)
         self.log("val_f1", self.val_f1, on_epoch=True, prog_bar=True)
 
+    def test_step(self, batch, batch_idx):
+        inputs, targets = batch
+        outputs = self.forward(inputs) # или self.forward(inputs, labels=None) для MetricLearning
+        loss = self.loss_fn(outputs, targets)
+        
+        preds = torch.argmax(outputs, dim=1)
+        
+        # Используем отдельные инстансы метрик для теста, 
+        # но для простоты можно переиспользовать val метрики или создать новые self.test_acc...
+        # Лучше создать новые в __init__, но чтобы не раздувать код, используем функциональный API:
+        
+        from torchmetrics.functional import accuracy, f1_score, precision, recall
+        
+        # Считаем метрики
+        acc = accuracy(preds, targets, task="multiclass", num_classes=self.cfg.model.num_classes)
+        f1 = f1_score(preds, targets, task="multiclass", num_classes=self.cfg.model.num_classes, average='macro')
+        prec = precision(preds, targets, task="multiclass", num_classes=self.cfg.model.num_classes, average='macro')
+        rec = recall(preds, targets, task="multiclass", num_classes=self.cfg.model.num_classes, average='macro')
+        
+        # Логируем с префиксом test_
+        self.log("test_loss", loss, on_epoch=True, prog_bar=True)
+        self.log("test_acc", acc, on_epoch=True, prog_bar=True)
+        self.log("test_f1", f1, on_epoch=True, prog_bar=True)
+        self.log("test_precision", prec, on_epoch=True)
+        self.log("test_recall", rec, on_epoch=True)
+
     def on_validation_epoch_end(self):
         # Очищаем матрицу в конце эпохи (хотя torchmetrics делает это сам, для надежности)
         pass

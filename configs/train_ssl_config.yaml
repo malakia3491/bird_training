@@ -1,20 +1,19 @@
 defaults:
-  - model: efficientnet
+  - model: efficientnet # или efficientnet
   - frontend: identity
-  - head: projection
-  - loss: ntxent
+  - head: projection # Возвращаем проектор!
+  - loss: ntxent     # Возвращаем SimCLR лосс
   - data: ssl_data
+  - augmentation: contrastive_strong
+  - augmentation@val_augmentation: val
   - optimizer: adamw_ssl
   - scheduler: cosine
   - trainer: ssl_trainer
-  - augmentation: contrastive_strong  # Новые продвинутые аугментации
   - _self_
 
-project_name: "Phase2_SimCLR_PANNs"
+project_name: "Phase2_SimCLR_Final"
 
-# Явное указание эпох для планировщика, чтобы избежать ошибок интерполяции
+ssl_mode: "contrastive"  # <--- ВАЖНО
+
 scheduler:
   T_max: 100
-
-# Можно переопределить путь к шумам через CLI:
-# uv run train_ssl.py augmentation.noise_dir="/path/to/noise_bank"

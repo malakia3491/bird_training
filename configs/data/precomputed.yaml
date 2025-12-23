@@ -4,3 +4,4 @@ root_dir: "D:/coding/data/birds_common/data_russian"
 batch_size: 64
 num_workers: 2
 resize_shape: null  # По умолчанию выключено
+m_per_class: 0  # <--- ВАЖНО: 0 для CrossEntropy

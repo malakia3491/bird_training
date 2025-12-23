@@ -1,0 +1,4 @@
+_target_: src.modules.heads.ProjectionHead
+in_features: 2048 # Будет перезаписано автоматически из кода
+hidden_dim: 2048
+out_dim: 128 # Размерность финального эмбеддинга (обычно 128, 256 или 512)

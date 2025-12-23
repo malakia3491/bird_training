@@ -13,18 +13,15 @@ class PrecomputedBirdDataset(Dataset):
         self.augmentation = augmentation
         
         # Если задан размер (H, W), создаем трансформ ресайза
-        self.resize = T.Resize(resize_shape) if resize_shape else None
+        self.resize = T.Resize(resize_shape, antialias=True) if resize_shape else None
 
     def __len__(self):
         return len(self.df)
 
     def __getitem__(self, idx):
         row = self.df.iloc[idx]
-        
-        # 1. Получаем путь
         mel_path = str(row['mel_path'])
         
-        # 2. Чиним путь
         if self.data_root:
             mel_path_clean = mel_path.replace('\\', '/')
             if 'mel/' in mel_path_clean:
@@ -36,26 +33,29 @@ class PrecomputedBirdDataset(Dataset):
         else:
             full_path = mel_path
 
-        # 3. Загружаем .npy
         try:
             mel_spec = np.load(full_path) 
-        except Exception as e:
-            return torch.zeros(1, 224, 224), torch.tensor(0, dtype=torch.long) # Безопасная заглушка
+        except Exception:
+            # Возвращаем заглушку нужного размера, если файл битый
+            # Лучше вернуть что-то похожее на правду, чтобы батч не упал
+            return torch.zeros(1, 128, 313), torch.tensor(0, dtype=torch.long)
 
-        # 4. В тензор
         mel_tensor = torch.from_numpy(mel_spec).float()
+        
+        # Гарантируем (C, F, T)
         if mel_tensor.ndim == 2:
             mel_tensor = mel_tensor.unsqueeze(0)
         
-        # 5. --- РЕСАЙЗ ДЛЯ VIT ---
+        # Применяем resize_shape из конфига DataModule (если есть)
         if self.resize:
             mel_tensor = self.resize(mel_tensor)
 
-        # 6. Аугментация
+        # Применяем Transform (SSLEvalTransform или ContrastiveTransform)
+        # Именно здесь SSLEvalTransform исправит размер, если self.resize был None
         if self.augmentation:
             mel_tensor = self.augmentation(mel_tensor)
 
-        # 7. Метка
+        # Получение метки (без изменений)
         species = row['species']
         try:
             label_idx = self.label_encoder.transform([species])[0]

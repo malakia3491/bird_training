@@ -10,11 +10,16 @@ class SSLExperimentReporter(pl.Callback):
         self.output_dir = output_dir
         self.report_path = os.path.join(output_dir, "SSL_REPORT.md")
         
+        # Определяем режим и ключи метрик
+        self.ssl_mode = cfg.get("ssl_mode", "contrastive") # contrastive / denoising / reconstruction
+        self.train_key = f"train_{self.ssl_mode}_loss"
+        self.val_key = f"val_{self.ssl_mode}_loss"
+        
         # История метрик
         self.history = {
             "epoch": [],
-            "train_ssl_loss": [],
-            "val_ssl_loss": []
+            "train_loss": [],
+            "val_loss": []
         }
 
     def on_train_epoch_end(self, trainer, pl_module):
@@ -26,32 +31,34 @@ class SSLExperimentReporter(pl.Callback):
             return val.item() if val is not None else None
 
         self.history["epoch"].append(epoch)
-        self.history["train_ssl_loss"].append(get_val("train_ssl_loss"))
-        self.history["val_ssl_loss"].append(get_val("val_ssl_loss"))
+        # Используем динамические ключи
+        self.history["train_loss"].append(get_val(self.train_key))
+        self.history["val_loss"].append(get_val(self.val_key))
 
     def _plot_loss_curve(self):
         epochs = self.history["epoch"]
         if not epochs: return None
 
-        train_loss = self.history["train_ssl_loss"]
-        val_loss = self.history["val_ssl_loss"]
+        train_loss = self.history["train_loss"]
+        val_loss = self.history["val_loss"]
 
         plt.figure(figsize=(10, 6))
         
-        # Рисуем Train
-        # Фильтруем None, если вдруг какая-то эпоха пропущена
         valid_train = [(e, v) for e, v in zip(epochs, train_loss) if v is not None]
         if valid_train:
-            plt.plot(*zip(*valid_train), label="Train Contrastive Loss", marker='o', color='blue')
+            plt.plot(*zip(*valid_train), label=f"Train {self.ssl_mode.capitalize()} Loss", marker='o', color='blue')
 
-        # Рисуем Val
         valid_val = [(e, v) for e, v in zip(epochs, val_loss) if v is not None]
         if valid_val:
-            plt.plot(*zip(*valid_val), label="Val Contrastive Loss", marker='s', color='orange')
+            plt.plot(*zip(*valid_val), label=f"Val {self.ssl_mode.capitalize()} Loss", marker='s', color='orange')
 
-        plt.title(f"SSL Training Dynamics ({self.cfg.project_name})")
+        plt.title(f"SSL Dynamics ({self.cfg.project_name})")
         plt.xlabel("Epoch")
-        plt.ylabel("NT-Xent Loss")
+        
+        # Подпись оси Y зависит от лосса
+        ylabel = "MSE Loss" if self.ssl_mode in ["denoising", "reconstruction"] else "NT-Xent Loss"
+        plt.ylabel(ylabel)
+        
         plt.legend()
         plt.grid(True, linestyle='--', alpha=0.7)
         
@@ -62,40 +69,36 @@ class SSLExperimentReporter(pl.Callback):
         return "ssl_loss_curve.png"
 
     def on_train_end(self, trainer, pl_module):
-        # 1. Рисуем график
         plot_img = self._plot_loss_curve()
         
-        # 2. Получаем финальные значения
         def get_last_valid(lst):
             valid = [x for x in lst if x is not None]
             return valid[-1] if valid else "N/A"
 
-        final_train = get_last_valid(self.history["train_ssl_loss"])
-        final_val = get_last_valid(self.history["val_ssl_loss"])
+        final_train = get_last_valid(self.history["train_loss"])
+        final_val = get_last_valid(self.history["val_loss"])
 
-        # Безопасное форматирование
         def fmt(val):
-            return f"{val:.4f}" if isinstance(val, (int, float)) else str(val)
+            return f"{val:.6f}" if isinstance(val, (int, float)) else str(val)
 
-        # 3. Конфиг в YAML
         config_yaml = OmegaConf.to_yaml(self.cfg)
         
-        # 4. Формируем отчет
-        md_content = f"""# 🧠 Отчет SSL Pre-training: {self.cfg.project_name}
+        # Описание метрики
+        loss_desc = "MSE (Reconstruction Error)" if self.ssl_mode != "contrastive" else "Contrastive Similarity"
+
+        md_content = f"""# 🧠 Отчет SSL ({self.ssl_mode}): {self.cfg.project_name}
 
 **ID:** `{os.path.basename(self.output_dir)}`  
 **Дата:** {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}  
 **Модель:** `{self.cfg.model.name}`  
-**Аугментации:** `RandomCrop`, `Time/Freq Mask`, `Gaussian Noise`
+**Режим:** `{self.ssl_mode}`
 
-## 1. Результаты (Pre-training)
+## 1. Результаты
 
-| Метрика | Значение (Final) | Описание |
+| Метрика | Значение (Final) | Что это значит |
 | :--- | :--- | :--- |
-| **Train Loss** | **{fmt(final_train)}** | Насколько хорошо модель сближает аугментации (обучение) |
-| **Val Loss** | **{fmt(final_val)}** | Проверка на отложенных данных (если есть) |
-
-*Примечание: В SSL низкий Loss означает, что модель научилась вытягивать инвариантные признаки (устойчивые к шуму и обрезке).*
+| **Train Loss** | **{fmt(final_train)}** | {loss_desc} на обучении |
+| **Val Loss** | **{fmt(final_val)}** | {loss_desc} на валидации |
 
 ## 2. Динамика обучения
 ![Loss Curve]({plot_img})
@@ -107,9 +110,8 @@ class SSLExperimentReporter(pl.Callback):
 ```yaml
 {config_yaml}
 </details>
-Generated by SSLExperimentReporter
+Generated by SSLExperimentReporter v2
 """
         with open(self.report_path, "w", encoding="utf-8") as f:
             f.write(md_content)
             print(f"\n📝 SSL Report saved to: {self.report_path}")
-            print(f"📈 Plot saved as: {plot_img}")

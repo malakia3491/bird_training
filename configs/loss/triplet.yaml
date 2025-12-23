@@ -1,0 +1,2 @@
+_target_: src.utils.losses.BatchHardTripletLoss
+margin: 1.0 # Отступ. Для евклидова расстояния обычно берут 1.0, для косинусного 0.2-0.5
