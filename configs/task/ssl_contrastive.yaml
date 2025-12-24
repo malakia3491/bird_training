@@ -1,0 +1,9 @@
+name: ssl_contrastive
+
+system_class:
+  _target_: src.systems.ssl.SSLSystem
+  
+defaults:
+  - /loss@_global_.loss: ntxent
+  - /head@_global_.head: projection
+  - /augmentation@_global_.data.train_transform: contrastive_strong

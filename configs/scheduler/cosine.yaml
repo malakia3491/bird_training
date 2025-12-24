@@ -1,3 +1,3 @@
 _target_: torch.optim.lr_scheduler.CosineAnnealingLR
-T_max: ${trainer.max_epochs} # Берет значение 10 (или 40) из главного конфига
+T_max: ${trainer.max_epochs}
 eta_min: 1e-6

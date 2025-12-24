@@ -1,0 +1,10 @@
+name: metric_learning
+
+system_class:
+  _target_: src.systems.metric.MetricSystem
+
+defaults:
+  - /loss@_global_.loss: cross_entropy # Для ArcFace
+  - /head@_global_.head: arcface
+  # Если у тебя есть конфиг сэмплера, раскомментируй и создай его
+  # - /sampler@_global_.data.sampler: m_per_class

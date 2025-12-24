@@ -1,0 +1,28 @@
+# configs/trainer/fast.yaml
+_target_: pytorch_lightning.Trainer
+
+# 1. Смешанная точность (Mixed Precision)
+# Ускоряет математику в 2-3 раза на Tensor Cores (RTX 3060) и экономит память.
+# '16-mixed' - стандарт (float32 веса, float16 операции)
+# 'bf16-mixed' - если у тебя 30-я серия RTX (Ampere), это ЕЩЕ лучше и стабильнее.
+precision: "16-mixed" 
+
+# 2. Оптимизация CUDA
+# Заставляет cuDNN подбирать самые быстрые алгоритмы свертки под твой размер картинки.
+# Идеально, когда input size фиксирован (у нас фиксирован).
+benchmark: true 
+
+# 3. Отключаем детерминизм (жертвуем воспроизводимостью ради скорости)
+deterministic: false
+
+# 4. Реже пишем логи (диск и консоль - узкое место)
+log_every_n_steps: 50
+enable_progress_bar: true # Можно выключить (false), если хочется еще +1% скорости
+
+# 5. Лимиты (чтобы не гонять лишнее)
+max_epochs: 100
+accelerator: "gpu"
+devices: 1
+
+# 6. Профилирование (опционально, выключено для скорости)
+profiler: null

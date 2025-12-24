@@ -1,0 +1,12 @@
+name: supcon_learning
+
+system_class:
+  _target_: src.systems.supcon.SupConSystem
+
+defaults:
+  - /loss@_global_.loss: supcon
+  - /head@_global_.head: projection
+  
+  # --- УДАЛИЛ СТРОКУ С AUGMENTATION ОТСЮДА ---
+  
+  - /sampler@_global_.data.sampler: m_per_class

@@ -1,0 +1,19 @@
+defaults:
+  - model: panns_vanilla
+  - frontend: identity
+  - head: projection # Используем MLP проектор
+  - loss: supcon     # SupCon Loss
+  - data: supcon     # Данные с сэмплером
+  - optimizer: adamw_ssl
+  - scheduler: cosine
+  - trainer: ssl_trainer
+  - augmentation: contrastive_strong # Наши сильные аугментации
+  - _self_
+
+project_name: "Phase2_SupCon_PANNs"
+
+ssl_mode: "contrastive" # Этот флаг пока нигде не используется, но пусть будет
+
+# Явное указание эпох для планировщика
+scheduler:
+  T_max: 100

@@ -1,0 +1,9 @@
+name: ssl_generative
+
+_target_: src.systems.ssl.SSLSystem
+ssl_mode: denoising # или reconstruction
+
+defaults:
+  - /loss@loss: mse
+  - /decoder@head: conv_decoder # В этой системе head играет роль декодера
+  - /augmentation@data.train_transform: contrastive_strong

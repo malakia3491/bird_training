@@ -1,0 +1,5 @@
+_target_: src.data_loaders.samplers.MPerClassSampler
+_partial_: true  # <--- ВАЖНО: Откладываем создание до момента, когда появятся labels
+m_per_class: 4
+batch_size: ${data.batch_size}
+length_scaling: 1.0

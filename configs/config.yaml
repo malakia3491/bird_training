@@ -1,0 +1,27 @@
+defaults:
+  - _self_
+  - task: classification
+  - model: efficientnet
+  - frontend: identity 
+  - data: labeled
+  - augmentation: none 
+  - optimizer: adamw
+  - scheduler: cosine
+  - trainer: default
+  - callbacks: default
+  - experiment: null
+
+experiment_name: "Debug"
+run_name: "test_run"
+
+seed: 42
+pretrained_from: null 
+compile: false
+
+hydra:
+  run:
+    dir: outputs/${experiment_name}/${run_name}
+  sweep:
+    dir: outputs/${experiment_name}
+    subdir: ${run_name}
+  output_subdir: hydra_config

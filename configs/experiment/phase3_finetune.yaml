@@ -1,0 +1,15 @@
+# @package _global_
+
+defaults:
+  - override /task: classification
+  - override /model: panns
+  - override /data: labeled
+
+experiment_name: "Phase3_FineTuning"
+run_name: "From_SimCLR_Weights"
+
+# МАГИЯ: Указываем путь к чекпоинту от предыдущего шага
+pretrained_from: "outputs/Phase2_SSL/PANNs_SimCLR_Strong/checkpoints/last.ckpt"
+
+optimizer:
+  lr: 1e-4 # Низкий LR

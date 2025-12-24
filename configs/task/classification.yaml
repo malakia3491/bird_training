@@ -1,0 +1,11 @@
+# Имя задачи
+name: classification
+
+# --- ИСПРАВЛЕНИЕ 1: Оборачиваем класс системы в ключ system_class ---
+system_class:
+  _target_: src.systems.classification.ClassificationSystem
+
+# --- ИСПРАВЛЕНИЕ 2: Используем @_global_, чтобы компоненты попали в корень cfg ---
+defaults:
+  - /loss@_global_.loss: cross_entropy
+  - /head@_global_.head: linear

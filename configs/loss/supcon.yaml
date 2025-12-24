@@ -1,0 +1,2 @@
+_target_: src.modules.losses.SupConLoss
+temperature: 0.1 # Для SupCon часто используют низкую температуру (0.07 - 0.1)
